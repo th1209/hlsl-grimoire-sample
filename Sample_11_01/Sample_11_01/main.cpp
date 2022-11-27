@@ -20,10 +20,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     InitRootSignature(rs);
 
     // step-1 シャドウマップ描画用のレンダリングターゲットを作成する
+    float clearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    RenderTarget shadowMap;
+    shadowMap.Create(
+        1024, 1024, // これがシャドウマップの解像度になる 上げすぎに注意
+        1, 1,
+        DXGI_FORMAT_R8G8B8A8_UNORM,
+        DXGI_FORMAT_D32_FLOAT,
+        clearColor
+    );
 
     // step-2 影描画用のライトカメラを作成する
+    Camera lightCamera;
+    lightCamera.SetPosition(0, 600, 0);
+    lightCamera.SetTarget(0, 0, 0);
+    lightCamera.SetUp(1, 0, 0); // 今回はライトが真下を向いているので､X方向を上に
+    lightCamera.SetViewAngle(Math::DegToRad(20.0f)); // 画角を狭めに
+    lightCamera.Update();
 
     // step-3 シャドウマップ描画用のモデルを用意する
+    ModelInitData teapotShadowModelInitData;
+    teapotShadowModelInitData.m_fxFilePath = "Assets/shader/sampleDrawShadowMap.fx";
+    teapotShadowModelInitData.m_tkmFilePath = "Assets/modelData/teapot.tkm";
+    Model teapotShadowModel;
+    teapotShadowModel.Init(teapotShadowModelInitData);
+    teapotShadowModel.UpdateWorldMatrix({ 0, 50, 0 }, g_quatIdentity, g_vec3One);
 
     // シャドウマップを表示するためのスプライトを初期化する
     SpriteInitData spriteInitData;
@@ -64,6 +85,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         //////////////////////////////////////
 
         // step-4 影を生成したいモデルをシャドウマップに描画する
+        renderContext.WaitUntilToPossibleSetRenderTarget(shadowMap);
+        renderContext.SetRenderTargetAndViewport(shadowMap);
+        renderContext.ClearRenderTargetView(shadowMap);
+        teapotShadowModel.Draw(renderContext, lightCamera);
+        renderContext.WaitUntilFinishDrawingToRenderTarget(shadowMap);
 
         // 通常レンダリング
         // レンダリングターゲットをフレームバッファに戻す

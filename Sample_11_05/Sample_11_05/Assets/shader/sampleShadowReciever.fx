@@ -11,6 +11,11 @@ cbuffer ModelCb : register(b0)
 };
 
 // step-11 影用のパラメータにアクセスする定数バッファーを定義
+cbuffer ShadowParamCb : register(b1)
+{
+    float4x4 mLVP;
+    float3 lightPos;
+};
 
 // 頂点シェーダーへの入力
 struct SVSIn
@@ -56,6 +61,8 @@ SPSIn VSMain(SVSIn vsIn)
     psIn.posInLVP = mul(mLVP, worldPos);
 
     // step-12 頂点のライトから見た深度値を計算する
+    // ※sampleDrawShadowMapと同様に､バーテックスシェーダの段階で[0,1]の区間に変換してやる
+    psIn.posInLVP.z = length(worldPos.xyz - lightPos) / 1000.0f;
 
     return psIn;
 }
@@ -79,7 +86,22 @@ float4 PSMain(SPSIn psIn) : SV_Target0
         && shadowMapUV.y > 0.0f && shadowMapUV.y < 1.0f)
     {
         // step-13 シャドウレシーバーに影を落とす
+        float2 shadowValue = g_shadowMap.Sample(g_sampler, shadowMapUV).xy;
+        if (zInLVP > shadowValue.r && zInLVP <= 1.0f) // ※ zInLVP <= 1.0f なので､1000より距離がある場合は影が落ちない
+        {
+            // チェビシェフの不等式 ここから
+            float depth_sq = shadowValue.x * shadowValue.x;
+            // このグループの分散を求めている(分散が大きいほど､varianceの値は大きくなる)
+            float variance = min(max(shadowValue.y - depth_sq, 0.0001f), 1.0f);
+            // このピクセルのライトから見た深度値と､シャドウマップの平均の深度値の差を求める
+            float md = zInLVP - shadowValue.x;
+            // 光が届く確率
+            float lit_factor = variance / (variance + md * md);
+            // チェビシェフの不等式 ここまで
 
+            float3 shadowColor = color.xyz * 0.5f;
+            color.xyz = lerp(shadowColor, color.xyz, lit_factor);
+        }
     }
 
     return color;
