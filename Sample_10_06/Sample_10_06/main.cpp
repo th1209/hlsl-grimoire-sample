@@ -147,8 +147,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     luminanceSprite.Init( luminanceSpriteInitData );
 
     // step-1 ガウシアンブラーを初期化
+    GaussianBlur gaussianBlur[4];
+    gaussianBlur[0].Init(&luminnceRenderTarget.GetRenderTargetTexture());
+    gaussianBlur[1].Init(&gaussianBlur[0].GetBokeTexture());
+    gaussianBlur[2].Init(&gaussianBlur[1].GetBokeTexture());
+    gaussianBlur[3].Init(&gaussianBlur[2].GetBokeTexture());
 
     // step-2 ボケ画像を合成して書き込むためのスプライトを初期化
+    SpriteInitData finalSpriteInitData;
+    finalSpriteInitData.m_textures[0] = &gaussianBlur[0].GetBokeTexture();
+    finalSpriteInitData.m_textures[1] = &gaussianBlur[1].GetBokeTexture();
+    finalSpriteInitData.m_textures[2] = &gaussianBlur[2].GetBokeTexture();
+    finalSpriteInitData.m_textures[3] = &gaussianBlur[3].GetBokeTexture();
+    finalSpriteInitData.m_width = 1280;
+    finalSpriteInitData.m_height = 720;
+    finalSpriteInitData.m_fxFilePath = "Assets/shader/samplePostEffect.fx";
+    finalSpriteInitData.m_psEntryPoinFunc = "PSBloomFinal";
+    finalSpriteInitData.m_alphaBlendMode = AlphaBlendMode_Add;
+    finalSpriteInitData.m_colorBufferFormat[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+    Sprite finalSprite;
+    finalSprite.Init(finalSpriteInitData);
+
 
     // mainRenderTargetのテクスチャをフレームバッファーに貼り付けるためのスプライトを初期化する
     // スプライトの初期化オブジェクトを作成する
@@ -212,8 +232,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         renderContext.WaitUntilFinishDrawingToRenderTarget(luminnceRenderTarget);
 
         // step-3 ガウシアンブラーを4回実行する
+        gaussianBlur[0].ExecuteOnGPU(renderContext, 10);
+        gaussianBlur[1].ExecuteOnGPU(renderContext, 10);
+        gaussianBlur[2].ExecuteOnGPU(renderContext, 10);
+        gaussianBlur[3].ExecuteOnGPU(renderContext, 10);
 
         // step-4 ボケ画像を合成してメインレンダリングターゲットに加算合成
+        renderContext.WaitUntilToPossibleSetRenderTarget(mainRenderTarget);
+        renderContext.SetRenderTargetAndViewport(mainRenderTarget);
+        finalSprite.Draw(renderContext);
+        renderContext.WaitUntilFinishDrawingToRenderTarget(mainRenderTarget);
 
         // メインレンダリングターゲットの絵をフレームバッファーにコピー
         renderContext.SetRenderTarget(

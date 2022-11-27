@@ -45,10 +45,36 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     Light light;
 
     // step-1 メインレンダリングターゲットと深度レンダリングターゲットを作成
+    RenderTarget mainRenderTarget;
+    mainRenderTarget.Create(1280, 720, 1, 1,
+        DXGI_FORMAT_R32G32B32A32_FLOAT,
+        DXGI_FORMAT_D32_FLOAT
+    );
+
+    RenderTarget depthRenderTarget;
+    depthRenderTarget.Create(1280, 720, 1, 1,
+        DXGI_FORMAT_R32_FLOAT,
+        DXGI_FORMAT_D32_FLOAT
+    );
+
 
     // step-2 シーンテクスチャをぼかすためのガウシアンブラーオブジェクトを初期化
+    GaussianBlur blur;
+    blur.Init(&mainRenderTarget.GetRenderTargetTexture());
 
     // step-3 ボケ画像合成用のスプライトを初期化する
+    SpriteInitData combineBokeImageSpriteImageSpriteInitData;
+    combineBokeImageSpriteImageSpriteInitData.m_textures[0] = &blur.GetBokeTexture();
+    combineBokeImageSpriteImageSpriteInitData.m_textures[1] = &depthRenderTarget.GetRenderTargetTexture();
+    combineBokeImageSpriteImageSpriteInitData.m_width = 1280;
+    combineBokeImageSpriteImageSpriteInitData.m_height = 720;
+    combineBokeImageSpriteImageSpriteInitData.m_fxFilePath = "Assets/shader/samplePostEffect.fx";
+    combineBokeImageSpriteImageSpriteInitData.m_colorBufferFormat[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    combineBokeImageSpriteImageSpriteInitData.m_alphaBlendMode = AlphaBlendMode_Trans;
+
+    Sprite combineBokeImageSprite;
+    combineBokeImageSprite.Init(combineBokeImageSpriteImageSpriteInitData);
+
 
     // メインレンダリングターゲットの絵をフレームバッファにコピーするためのスプライトを初期化
     // スプライトの初期化オブジェクトを作成する
@@ -87,10 +113,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         MoveCamera();
 
         // step-4 2枚のレンダリングターゲットを設定して、モデルを描画する
+        RenderTarget* rts[] = {
+            &mainRenderTarget,
+            &depthRenderTarget
+        };
+
+        renderContext.WaitUntilToPossibleSetRenderTargets(2, rts);
+        renderContext.SetRenderTargetsAndViewport(2, rts);
+        renderContext.ClearRenderTargetViews(2, rts);
+
+        model.Draw(renderContext);
+
+        renderContext.WaitUntilFinishDrawingToRenderTargets(2, rts);
 
         // step-5 メインレンダリングターゲットのボケ画像を作成
+        blur.ExecuteOnGPU(renderContext, 2);
 
         // step-6 ボケ画像と深度テクスチャを利用して、ボケ画像を描きこんでいく
+        renderContext.WaitUntilToPossibleSetRenderTarget(mainRenderTarget);
+        renderContext.SetRenderTargetAndViewport(mainRenderTarget);
+
+        combineBokeImageSprite.Draw(renderContext);
+
+        renderContext.WaitUntilFinishDrawingToRenderTarget(mainRenderTarget);
 
         // メインレンダリングターゲットの絵をフレームバッファーにコピー
         renderContext.SetRenderTarget(

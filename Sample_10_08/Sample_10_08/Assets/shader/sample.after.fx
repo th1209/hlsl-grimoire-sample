@@ -1,14 +1,14 @@
 /*!
- *@brief ˜ZŠpŒ`ƒuƒ‰[
+ *@brief ï¿½Zï¿½pï¿½`ï¿½uï¿½ï¿½ï¿½[
  */
 
-// ƒuƒ‰[‚ğ‚©‚¯‚éƒeƒNƒXƒ`ƒƒ‚Ì•
+// ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½ï¿½Ì•ï¿½
 static const float BLUR_TEX_W = 1280.0f;
 
-// ƒuƒ‰[‚ğ‚©‚¯‚éƒeƒNƒXƒ`ƒƒ‚Ì‚‚³
+// ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½
 static const float BLUR_TEX_H = 720.0f;
 
-// ƒuƒ‰[”¼ŒaB‚±‚Ì”’l‚ğ‘å‚«‚­‚·‚é‚Æ˜ZŠpŒ`ƒ{ƒP‚ª‘å‚«‚­‚È‚é
+// ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½aï¿½Bï¿½ï¿½ï¿½Ìï¿½ï¿½lï¿½ï¿½å‚«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ˜Zï¿½pï¿½`ï¿½{ï¿½Pï¿½ï¿½ï¿½å‚«ï¿½ï¿½ï¿½È‚ï¿½
 static const float BLUR_RADIUS = 8.0f;
 
 struct VSInput
@@ -25,19 +25,19 @@ struct PSInput
 
 cbuffer cb : register(b0)
 {
-    float4x4 mvp;       // MVPs—ñ
-    float4 mulColor;    // æZƒJƒ‰[
+    float4x4 mvp;       // MVPï¿½sï¿½ï¿½
+    float4 mulColor;    // ï¿½ï¿½Zï¿½Jï¿½ï¿½ï¿½[
 };
 
-// step-6  ‚’¼A‘ÎŠpüƒuƒ‰[‚Ìo—Í\‘¢‘Ì‚ğ’è‹`
+// step-6  ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½ÎŠpï¿½ï¿½ï¿½uï¿½ï¿½ï¿½[ï¿½Ìoï¿½Í\ï¿½ï¿½ï¿½Ì‚ï¿½ï¿½`
 struct PSOutput
 {
-    float4 color_0 : SV_Target0;    // ‚’¼ƒuƒ‰[‚Ìo—Íæ
-    float4 color_1 : SV_Target1;    // Î‚ßƒuƒ‰[‚Ìo—Íæ
+    float4 color_0 : SV_Target0;    // ï¿½ï¿½ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½[ï¿½Ìoï¿½Íï¿½
+    float4 color_1 : SV_Target1;    // ï¿½Î‚ßƒuï¿½ï¿½ï¿½[ï¿½Ìoï¿½Íï¿½
 };
 
 /*!
- *@brief ’¸“_ƒVƒF[ƒ_[
+ *@brief ï¿½ï¿½ï¿½_ï¿½Vï¿½Fï¿½[ï¿½_ï¿½[
  */
 PSInput VSMain(VSInput In)
 {
@@ -47,55 +47,55 @@ PSInput VSMain(VSInput In)
     return psIn;
 }
 
-Texture2D<float4> srcTexture : register(t0); // ƒuƒ‰[‚ğ‚©‚¯‚é‘O‚ÌƒIƒŠƒWƒiƒ‹ƒeƒNƒXƒ`ƒƒ
+Texture2D<float4> srcTexture : register(t0); // ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ÌƒIï¿½ï¿½ï¿½Wï¿½iï¿½ï¿½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½
 
-// ƒTƒ“ƒvƒ‰[ƒXƒe[ƒg
+// ï¿½Tï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½Xï¿½eï¿½[ï¿½g
 sampler g_sampler : register(s0);
 
 /*!
- *@brief ‚’¼AÎ‚ßƒuƒ‰[‚ÌƒsƒNƒZƒ‹ƒVƒF[ƒ_[
+ *@brief ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Î‚ßƒuï¿½ï¿½ï¿½[ï¿½Ìƒsï¿½Nï¿½Zï¿½ï¿½ï¿½Vï¿½Fï¿½[ï¿½_ï¿½[
  */
 PSOutput PSVerticalDiagonalBlur(PSInput pIn)
 {
     PSOutput psOut = (PSOutput)0;
 
-    // ƒuƒ‰[‚ğ‚©‚¯‚éƒeƒNƒXƒ`ƒƒ‚ÌƒJƒ‰[‚ğæ“¾
+    // ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½ï¿½ÌƒJï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½æ“¾
     float4 srcColor = srcTexture.Sample(
         g_sampler, pIn.uv );
 
-    // step-7 ƒuƒ‰[”¼ŒaiBLUR_RADIUSj‚©‚çƒuƒ‰[ƒXƒeƒbƒv‚Ì’·‚³‚ğ‹‚ß‚é
+    // step-7 ï¿½uï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½aï¿½iBLUR_RADIUSï¿½jï¿½ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½[ï¿½Xï¿½eï¿½bï¿½vï¿½Ì’ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß‚ï¿½
     float blurStepLen = BLUR_RADIUS / 4.0f;
 
-    // step-8 ‚’¼•ûŒü‚ÌUVƒIƒtƒZƒbƒg‚ğŒvZ
+    // step-8 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UVï¿½Iï¿½tï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½vï¿½Z
     float2 uvOffset = float2(0.0f, 1.0f / BLUR_TEX_H);
     uvOffset *= blurStepLen;
 
-    // step-9 ‚’¼•ûŒü‚ÉƒJƒ‰[‚ğƒTƒ“ƒvƒŠƒ“ƒO‚µ‚Ä•½‹Ï‚·‚é
-    // 1ƒXƒeƒbƒvi‚ß‚é
+    // step-9 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉƒJï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Tï¿½ï¿½ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½Ä•ï¿½ï¿½Ï‚ï¿½ï¿½ï¿½
+    // 1ï¿½Xï¿½eï¿½bï¿½vï¿½iï¿½ß‚ï¿½
     psOut.color_0 += srcTexture.Sample(
         g_sampler, pIn.uv + uvOffset);
 
-    // 2ƒXƒeƒbƒvi‚ß‚é
+    // 2ï¿½Xï¿½eï¿½bï¿½vï¿½iï¿½ß‚ï¿½
     psOut.color_0 += srcTexture.Sample(
         g_sampler, pIn.uv + uvOffset * 2);
 
-    // 3ƒXƒeƒbƒvi‚ß‚é
+    // 3ï¿½Xï¿½eï¿½bï¿½vï¿½iï¿½ß‚ï¿½
     psOut.color_0 += srcTexture.Sample(
         g_sampler, pIn.uv + uvOffset * 3);
 
-    // 4ƒXƒeƒbƒvi‚ß‚é
+    // 4ï¿½Xï¿½eï¿½bï¿½vï¿½iï¿½ß‚ï¿½
     psOut.color_0 += srcTexture.Sample(
         g_sampler, pIn.uv + uvOffset * 4);
 
-    // •½‹Ï‰»
+    // ï¿½ï¿½ï¿½Ï‰ï¿½
     psOut.color_0 /= 4.0f;
 
-    // step-10 ‘ÎŠpü•ûŒü‚ÌUVƒIƒtƒZƒbƒg‚ğŒvZ
+    // step-10 ï¿½ÎŠpï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UVï¿½Iï¿½tï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½vï¿½Z
     uvOffset.x = 0.86602f / BLUR_TEX_W;
     uvOffset.y = -0.5f / BLUR_TEX_H;
     uvOffset *= blurStepLen;
 
-    // step-11 ‘ÎŠpü•ûŒü‚ÉƒJƒ‰[‚ğƒTƒ“ƒvƒŠƒ“ƒO‚µ‚Ä•½‹Ï‰»‚·‚é
+    // step-11 ï¿½ÎŠpï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉƒJï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Tï¿½ï¿½ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½Ä•ï¿½ï¿½Ï‰ï¿½ï¿½ï¿½ï¿½ï¿½
     psOut.color_1 = srcTexture.Sample(
         g_sampler, pIn.uv + uvOffset);
 
@@ -111,31 +111,31 @@ PSOutput PSVerticalDiagonalBlur(PSInput pIn)
     psOut.color_1 += srcColor;
     psOut.color_1 /= 5.0f;
 
-    // ‚’¼•ûŒü‚É•½‹Ï‰»
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É•ï¿½ï¿½Ï‰ï¿½
     psOut.color_1 += psOut.color_0;
     psOut.color_1 /= 2.0f;
 
     return psOut;
 }
 
-Texture2D<float4> blurTexture_0 : register(t0); // ƒuƒ‰[ƒeƒNƒXƒ`ƒƒ_0B1ƒpƒX–Ú‚Åì¬‚³‚ê‚½ƒeƒNƒXƒ`ƒƒ
-Texture2D<float4> blurTexture_1 : register(t1); // ƒuƒ‰[ƒeƒNƒXƒ`ƒƒ_1B1ƒpƒX–Ú‚Åì¬‚³‚ê‚½ƒeƒNƒXƒ`ƒƒ
+Texture2D<float4> blurTexture_0 : register(t0); // ï¿½uï¿½ï¿½ï¿½[ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½_0ï¿½B1ï¿½pï¿½Xï¿½Ú‚Åì¬ï¿½ï¿½ï¿½ê‚½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½
+Texture2D<float4> blurTexture_1 : register(t1); // ï¿½uï¿½ï¿½ï¿½[ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½_1ï¿½B1ï¿½pï¿½Xï¿½Ú‚Åì¬ï¿½ï¿½ï¿½ê‚½ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½
 
 /*!
- *@brief ˜ZŠpŒ`ì¬ƒuƒ‰[
+ *@brief ï¿½Zï¿½pï¿½`ï¿½ì¬ï¿½uï¿½ï¿½ï¿½[
  */
 float4 PSRhomboidBlur(PSInput pIn) : SV_Target0
 {
-    // ƒuƒ‰[ƒXƒeƒbƒv‚Ì’·‚³‚ğ‹‚ß‚é
+    // ï¿½uï¿½ï¿½ï¿½[ï¿½Xï¿½eï¿½bï¿½vï¿½Ì’ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß‚ï¿½
     float blurStepLen = BLUR_RADIUS / 4.0f;
 
-    // step-12 ¶Î‚ß‰º•ûŒü‚Ö‚ÌUVƒIƒtƒZƒbƒg‚ğŒvZ‚·‚é
+    // step-12 ï¿½ï¿½ï¿½Î‚ß‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö‚ï¿½UVï¿½Iï¿½tï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½vï¿½Zï¿½ï¿½ï¿½ï¿½
     float2 uvOffset;
     uvOffset.x = 0.86602f / BLUR_TEX_W;
     uvOffset.y = -0.5f / BLUR_TEX_H;
     uvOffset *= blurStepLen;
 
-    // step-13 ¶Î‚ß‰º•ûŒü‚ÉƒJƒ‰[‚ğƒTƒ“ƒvƒŠƒ“ƒO‚·‚é
+    // step-13 ï¿½ï¿½ï¿½Î‚ß‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉƒJï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Tï¿½ï¿½ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½ï¿½
     float4 color = blurTexture_0.Sample(
         g_sampler, pIn.uv + uvOffset);
 
@@ -148,10 +148,10 @@ float4 PSRhomboidBlur(PSInput pIn) : SV_Target0
     color += blurTexture_0.Sample(
         g_sampler, pIn.uv + uvOffset * 4);
 
-    // step-14 ‰EÎ‚ß‰º•ûŒü‚Ö‚ÌUVƒIƒtƒZƒbƒg‚ğŒvZ‚·‚é
+    // step-14 ï¿½Eï¿½Î‚ß‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö‚ï¿½UVï¿½Iï¿½tï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½vï¿½Zï¿½ï¿½ï¿½ï¿½
     uvOffset.x = -0.86602f / BLUR_TEX_W * blurStepLen;
 
-    // step-15 ‰EÎ‚ß‰º•ûŒü‚ÉƒJƒ‰[‚ğƒTƒ“ƒvƒŠƒ“ƒO‚·‚é
+    // step-15 ï¿½Eï¿½Î‚ß‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉƒJï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Tï¿½ï¿½ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½ï¿½
     color += blurTexture_1.Sample(
         g_sampler, pIn.uv);
 
@@ -167,7 +167,7 @@ float4 PSRhomboidBlur(PSInput pIn) : SV_Target0
     color += blurTexture_1.Sample(
         g_sampler, pIn.uv + uvOffset * 4);
 
-    // step-16 •½‹Ï‰»
+    // step-16 ï¿½ï¿½ï¿½Ï‰ï¿½
     color /= 9.0f;
 
     return color;

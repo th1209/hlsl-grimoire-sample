@@ -23,11 +23,40 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     RenderTarget mainRenderTarget, depthRenderTarget;;
     InitMainDepthRenderTarget(mainRenderTarget, depthRenderTarget);
 
-    // step-1 各種レンダリングターゲットを初期化する
+    // step-1 各種レンダリングターゲット
+    RenderTarget rtVerticalBlur; //垂直ブラー用ターゲット
+    RenderTarget rtDiagonalBlur; //対角線ブラー用ターゲット
+    RenderTarget rtPhomboidBlur; //六角系ブラー用ターゲット
+    rtVerticalBlur.Create(1280, 720, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
+    rtDiagonalBlur.Create(1280, 720, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
+    rtPhomboidBlur.Create(1280, 720, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
 
     // step-2 垂直、対角線ブラーをかけるためのスプライトを初期化
+    SpriteInitData vertDiagonalBlurSpriteInitData;
+    vertDiagonalBlurSpriteInitData.m_textures[0] = &mainRenderTarget.GetRenderTargetTexture();
+    vertDiagonalBlurSpriteInitData.m_width = 1280;
+    vertDiagonalBlurSpriteInitData.m_height = 720;
+    vertDiagonalBlurSpriteInitData.m_fxFilePath = "Assets/shader/sample.fx";
+    vertDiagonalBlurSpriteInitData.m_psEntryPoinFunc = "PSVerticalDiagonalBlur";
+    vertDiagonalBlurSpriteInitData.m_colorBufferFormat[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    vertDiagonalBlurSpriteInitData.m_colorBufferFormat[1] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+    Sprite vertDiagonalBlurSprite;
+    vertDiagonalBlurSprite.Init(vertDiagonalBlurSpriteInitData);
 
     // step-3 六角形ブラーをかけるためのスプライトを初期化
+    SpriteInitData phomboidBlurSpriteInitData;
+    phomboidBlurSpriteInitData.m_textures[0] = &rtVerticalBlur.GetRenderTargetTexture();
+    phomboidBlurSpriteInitData.m_textures[1] = &rtDiagonalBlur.GetRenderTargetTexture();
+    phomboidBlurSpriteInitData.m_width = 1280;
+    phomboidBlurSpriteInitData.m_height = 720;
+    phomboidBlurSpriteInitData.m_fxFilePath = "Assets/shader/sample.fx";
+    phomboidBlurSpriteInitData.m_psEntryPoinFunc = "PSRhomboidBlur";
+    phomboidBlurSpriteInitData.m_colorBufferFormat[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+    Sprite phomboidBlurSprite;
+    phomboidBlurSprite.Init(phomboidBlurSpriteInitData);
+
 
     // ボケ画像をメインレンダリングターゲットに合成するためののスプライトを初期化する
     Sprite combineBokeImageSprite;
@@ -97,8 +126,25 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         renderContext.WaitUntilFinishDrawingToRenderTargets(2, rts);
 
         // step-4 垂直、対角線ブラーをかける
+        RenderTarget* blurRts[] = {
+            &rtVerticalBlur,
+            &rtDiagonalBlur
+        };
+        renderContext.WaitUntilToPossibleSetRenderTargets(2, blurRts);
+        renderContext.SetRenderTargetsAndViewport(2, blurRts);
+        renderContext.ClearRenderTargetViews(2, blurRts);
+
+        vertDiagonalBlurSprite.Draw(renderContext);
+        
+        renderContext.WaitUntilFinishDrawingToRenderTargets(2, blurRts);
 
         // step-5 六角形ブラーをかける
+        renderContext.WaitUntilToPossibleSetRenderTarget(rtPhomboidBlur);
+        renderContext.SetRenderTargetAndViewport(rtPhomboidBlur);
+
+        phomboidBlurSprite.Draw(renderContext);
+
+        renderContext.WaitUntilFinishDrawingToRenderTarget(rtPhomboidBlur);
 
         // ボケ画像と深度テクスチャを利用して、ボケ画像を描きこんでいく
         // メインレンダリングターゲットを設定
