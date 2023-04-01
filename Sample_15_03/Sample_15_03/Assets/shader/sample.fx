@@ -2,9 +2,24 @@
  * @brief ガウシアンブラーのコンピュートシェーダー
  */
 
-// step-8 各種定数バッファーにアクセスするための変数を定義
+// step-10 各種定数バッファーにアクセスするための変数を定義
+// 重み付けテーブル用
+cbuffer cb_0 : register(b0)
+{
+    float4 weights[2];
+};
 
-// step-9 入出力画像にアクセスするための変数を定義
+// テクスチャサイズ取得用
+cbuffer texInfoCB : register(b1)
+{
+    int2 texSize;
+    int2 xBlurTexSize;
+    int2 yBlurTexSize;
+};
+
+// step-11 入出力画像にアクセスするための変数を定義
+StructuredBuffer<uint> inputImage : register(t0);
+RWStructuredBuffer<uint> outputImage : register(u0);
 
 /*!
  * @brief float4をRGBA32フォーマットに変換
@@ -39,12 +54,81 @@ float4 GetPixelColor(int x, int y, int2 texSize)
     x = clamp(0, texSize.x, x);
     y = clamp(0, texSize.y, y);
 
-    uint pixelIndex = GetPixelIndexFromXYCoord(x, y, texSize.y);
+    uint pixelIndex = GetPixelIndexFromXYCoord(x, y, texSize.x);
     return UnpackedRGBA32ToFloat4(inputImage[ pixelIndex]);
 }
 
-// step-10 Xブラーを実装
+// step-12 Xブラーを実装
+[numthreads(4, 4, 1)]
+void XBlur(uint3 DTid : SV_DispatchThreadID)
+{
+    // DTid.xとDTid.yには､Xブラーバッファのx/y両方のサイズが入っている.
+    // 元の画像サイズに対し､X方向にサンプリングする必要があるため､2倍している.
+    uint2 basepos = uint2(DTid.x * 2, DTid.y);
 
-// step-11 Yブラーを実装
+    float4 color = GetPixelColor(basepos.x, basepos.y, texSize) * weights[0].x;
+    color += GetPixelColor(basepos.x + 1, basepos.y, texSize) * weights[0].y;
+    color += GetPixelColor(basepos.x + 2, basepos.y, texSize) * weights[0].z;
+    color += GetPixelColor(basepos.x + 3, basepos.y, texSize) * weights[0].w;
+    color += GetPixelColor(basepos.x + 4, basepos.y, texSize) * weights[1].x;
+    color += GetPixelColor(basepos.x + 5, basepos.y, texSize) * weights[1].y;
+    color += GetPixelColor(basepos.x + 6, basepos.y, texSize) * weights[1].z;
+    color += GetPixelColor(basepos.x + 7, basepos.y, texSize) * weights[1].w;
+    color += GetPixelColor(basepos.x - 1, basepos.y, texSize) * weights[0].y;
+    color += GetPixelColor(basepos.x - 2, basepos.y, texSize) * weights[0].z;
+    color += GetPixelColor(basepos.x - 3, basepos.y, texSize) * weights[0].w;
+    color += GetPixelColor(basepos.x - 4, basepos.y, texSize) * weights[1].x;
+    color += GetPixelColor(basepos.x - 5, basepos.y, texSize) * weights[1].y;
+    color += GetPixelColor(basepos.x - 6, basepos.y, texSize) * weights[1].z;
+    color += GetPixelColor(basepos.x - 7, basepos.y, texSize) * weights[1].w;
 
-// step-12 最終出力を実装
+    uint pixelIndex = GetPixelIndexFromXYCoord(DTid.x, DTid.y, xBlurTexSize.x);
+    outputImage[pixelIndex] = PackedFloat4ToRGBA32(color);
+}
+
+// step-13 Yブラーを実装
+[numthreads(4, 4, 1)]
+void YBlur(uint3 DTid : SV_DispatchThreadID)
+{
+    // DTid.xとDTid.yには､Yブラーバッファのx/y両方のサイズが入っている.
+    // X方向にブラーをかけたバッファに対し､Y方向にサンプリングする必要があるため､Y方向だけ2倍している.
+    // 入力はXブラーバッファで､Xブラーは前処理でかけているから､1倍でよい.
+    uint2 basepos = uint2(DTid.x, DTid.y * 2);
+
+    float4 color = GetPixelColor(basepos.x, basepos.y, xBlurTexSize) * weights[0].x;
+    color += GetPixelColor(basepos.x, basepos.y + 1, xBlurTexSize) * weights[0].y;
+    color += GetPixelColor(basepos.x, basepos.y + 2, xBlurTexSize) * weights[0].z;
+    color += GetPixelColor(basepos.x, basepos.y + 3, xBlurTexSize) * weights[0].w;
+    color += GetPixelColor(basepos.x, basepos.y + 4, xBlurTexSize) * weights[1].x;
+    color += GetPixelColor(basepos.x, basepos.y + 5, xBlurTexSize) * weights[1].y;
+    color += GetPixelColor(basepos.x, basepos.y + 6, xBlurTexSize) * weights[1].z;
+    color += GetPixelColor(basepos.x, basepos.y + 7, xBlurTexSize) * weights[1].w;
+    color += GetPixelColor(basepos.x, basepos.y - 1, xBlurTexSize) * weights[0].y;
+    color += GetPixelColor(basepos.x, basepos.y - 2, xBlurTexSize) * weights[0].z;
+    color += GetPixelColor(basepos.x, basepos.y - 3, xBlurTexSize) * weights[0].w;
+    color += GetPixelColor(basepos.x, basepos.y - 4, xBlurTexSize) * weights[1].x;
+    color += GetPixelColor(basepos.x, basepos.y - 5, xBlurTexSize) * weights[1].y;
+    color += GetPixelColor(basepos.x, basepos.y - 6, xBlurTexSize) * weights[1].z;
+    color += GetPixelColor(basepos.x, basepos.y - 7, xBlurTexSize) * weights[1].w;
+
+    uint pixelIndex = GetPixelIndexFromXYCoord(DTid.x, DTid.y, yBlurTexSize.x);
+    outputImage[pixelIndex] = PackedFloat4ToRGBA32(color);
+}
+
+// step-14 最終出力を実装
+[numthreads(4, 4, 1)]
+void Final(uint3 DTid : SV_DispatchThreadID)
+{
+    // 入力はYブラーバッファで､元の画像サイズの1/4なので､それぞれ1/2する.
+    uint2 basepos = uint2(DTid.x / 2, DTid.y / 2);
+    
+    // 4方向にサンプリングし､加重平均を取る
+    float4 color = GetPixelColor(basepos.x, basepos.y, yBlurTexSize);
+    color += GetPixelColor(basepos.x, basepos.y + 1, yBlurTexSize);
+    color += GetPixelColor(basepos.x + 1, basepos.y, yBlurTexSize);
+    color += GetPixelColor(basepos.x + 1, basepos.y + 1, yBlurTexSize);
+    color /= 4.0f;
+
+    uint pixelIndex = GetPixelIndexFromXYCoord(DTid.x, DTid.y, texSize.x);
+    outputImage[pixelIndex] = PackedFloat4ToRGBA32(color);
+}
