@@ -60,6 +60,9 @@ struct SPSIn
 ///////////////////////////////////////////////////
 
 // step-1 各種マップにアクセスするための変数を追加
+Texture2D<float4> g_albedo : register(t0);
+Texture2D<float4> g_normalMap : register(t1);
+Texture2D<float4> g_metallicSmoothMap : register(t2); //r:メタリック､α:滑らかさ
 
 // サンプラーステート
 sampler g_sampler : register(s0);
@@ -152,7 +155,13 @@ float CookTorranceSpecular(float3 L, float3 V, float3 N, float metallic)
 float CalcDiffuseFromFresnel(float3 N, float3 L, float3 V)
 {
     // step-4 フレネル反射を考慮した拡散反射光を求める
+    // 法線と光源に向かうベクトルがどれだけ似ているか
+    float dotNL = saturate(dot(N,L));
 
+    // 法線と視線に向かうベクトルがどれだけ似ているか
+    float dotNV = saturate(dot(N,V));
+
+    return (dotNL * dotNV);
 }
 
 /// <summary>
@@ -182,6 +191,10 @@ float4 PSMain(SPSIn psIn) : SV_Target0
     float3 normal = GetNormal(psIn.normal, psIn.tangent, psIn.biNormal, psIn.uv);
 
     // step-2 各種マップをサンプリングする
+    float4 albedoColor = g_albedo.Sample(g_sampler, psIn.uv);
+    float3 specColor = g_albedoColor; // スペキュラカラーはアルベドカラーと同じとみなす.
+    float metallic = g_metallicSmoothMap.Sample(g_sampler, psIn.uv).r;
+    float smooth = g_metallicSmoothMap.Sample(g_sampler, psIn.uv).a;
 
     // 視線に向かって伸びるベクトルを計算する
     float3 toEye = normalize(eyePos - psIn.worldPos);
@@ -190,11 +203,21 @@ float4 PSMain(SPSIn psIn) : SV_Target0
     for(int ligNo = 0; ligNo < NUM_DIRECTIONAL_LIGHT; ligNo++)
     {
         // step-3 シンプルなディズニーベースの拡散反射を実装する
+        // フレネル反射
+        float diffuseFromFresnel = CalcDiffuseFromFresnel(normal, -directionalLight[ligNo].direction, toEye);
+
+        // 正規化Lambert拡散反射
+        float NdotL = saturate(dot(normal, -directionalLight[ligNo].direction));
+        float3 lambertDiffuse = directionalLight[ligNo].color * NdotL / PI;
+
+        float3 diffuse = albedoColor * diffuseFromFresnel * lambertDiffuse;
 
         // step-5 Cook-Torranceモデルを利用した鏡面反射率を計算する
+        // 金属性が強いものほどスペキュラカラー､そうでないものほど白に近づく
+        spec *= lerp(float3(1.0f,1.0f,1.0f), specColor, metallic);
 
         // step-6 滑らかさを使って、拡散反射光と鏡面反射光を合成する
-
+        lig += diffuse * (1.0f - smooth) + spec;
     }
 
     // 環境光による底上げ
