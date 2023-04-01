@@ -34,6 +34,7 @@ cbuffer ModelCb : register(b0)
 Texture2D<float4> g_texture : register(t0);
 
 // step-3 深度テクスチャにアクセスするための変数を追加
+Texture2D<float4> g_depthTexture : register(t10);
 
 ///////////////////////////////////////////
 // サンプラーステート
@@ -53,6 +54,8 @@ SPSIn VSMain(SVSIn vsIn, uniform bool hasSkin)
     psIn.uv = vsIn.uv;
 
     // step-4 頂点の正規化スクリーン座標系の座標をピクセルシェーダーに渡す
+    psIn.posInProj = psIn.pos;
+    psIn.posInProj.xy /= psIn.posInProj.w;
 
     return psIn;
 }
@@ -64,4 +67,36 @@ float4 PSMain(SPSIn psIn) : SV_Target0
 {
     // step-5 近傍8テクセルの深度値を計算して、エッジを抽出する
 
+    // 正規化スクリーン座標 -> UV座標に変換
+    float2 uv = psIn.posInProj.xy * float2(0.5f, -0.5f) + 0.5f;
+
+    float2 uvOffset[8] = {
+        float2(           0.0f,  1.0f / 720.0f),  // 上
+        float2(           0.0f, -1.0f / 720.0f),  // 下
+        float2( 1.0f / 1280.0f,           0.0f), // 右
+        float2(-1.0f / 1280.0f,           0.0f), // 左
+        float2( 1.0f / 1280.0f,  1.0f / 720.0f), // 右上
+        float2(-1.0f / 1280.0f,  1.0f / 720.0f), // 左上
+        float2( 1.0f / 1280.0f, -1.0f / 720.0f), // 右下
+        float2(-1.0f / 1280.0f, -1.0f / 720.0f)  // 左下
+    };
+
+    // 自身の深度値
+    float depth = g_depthTexture.Sample(g_sampler, uv).x;
+
+    // 近傍8テクセルの深度値平均
+    float depth2 = 0.0f;
+    for (int i = 0; i < 8; i++)
+    {
+        depth2 += g_depthTexture.Sample(g_sampler, uv + uvOffset[i]).x;
+    }
+    depth2 /= 8.0f;
+
+    // 深度値に差が見られるようなら､黒い輪郭線で返す
+    if (abs(depth - depth2) > 0.00005f)
+    {
+        return float4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+    return g_texture.Sample(g_sampler, psIn.uv);
 }

@@ -39,6 +39,12 @@ Texture2D<float4> g_texture : register(t0);
 sampler g_sampler : register(s0);
 
 // step-1 ディザパターンを定義する
+static const int pattern[4][4] = {
+    { 0, 32,  8, 40},
+    {48, 16, 56, 24},
+    {12, 44,  4, 36},
+    {60, 28, 52, 20},
+};
 
 /// <summary>
 /// モデル用の頂点シェーダーのエントリーポイント
@@ -63,4 +69,14 @@ float4 PSMain(SPSIn psIn) : SV_Target0
 {
     // step-2 ディザパターンを利用してディザリングを実装する
 
+    // 4で割った余りを求める
+    int x = (int)fmod(psIn.pos.x, 4.0f);
+    int y = (int)fmod(psIn.pos.y, 4.0f);
+
+    // ディザパターンから値を抽出し､50以下の値であれば描画しない
+    int dither = pattern[y][x];
+    clip(dither - 50);
+
+    float4 tex = g_texture.Sample(g_sampler, psIn.uv);
+    return tex;
 }

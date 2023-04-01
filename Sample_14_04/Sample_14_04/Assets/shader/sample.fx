@@ -58,6 +58,9 @@ SPSIn VSMain(SVSIn vsIn, uniform bool hasSkin)
     psIn.uv = vsIn.uv;
 
     // step-1 オブジェクトとカメラとの距離を求める
+    float4 objectPos = mWorld[3];
+    float4 objectPosInCamera = mul(mView, objectPos);
+    psIn.distToEye = length(objectPosIncamera);
 
     return psIn;
 }
@@ -75,12 +78,16 @@ float4 PSMain(SPSIn psIn) : SV_Target0
     int dither = pattern[y][x];
 
     // step-2 完全にクリップされる範囲を定義する
+    float clipRange = 50.0f;
 
     // step-3 視点とクリップ範囲までの距離を計算する
+    float eyeToClipRange = max(0.0f, psIn.distToEye - clipRange);
 
     // step-4 クリップ率を求める
+    float clipRate = 1.0f - min(1.0f, eyeToClipRange / 100.0f);
 
     // step-5 クリップ率を利用してピクセルキルを行う
+    clip(dither - 64 * clipRate);
 
     float4 tex = g_texture.Sample( g_sampler, psIn.uv);
     return tex;
