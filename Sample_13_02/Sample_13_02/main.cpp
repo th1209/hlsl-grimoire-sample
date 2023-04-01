@@ -60,6 +60,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     bgModel.Init(modelInitData);
 
     // step-1 半透明の球体モデルを初期化
+    ModelInitData transModelInitData;
+    transModelInitData.m_tkmFilePath = "Assets/modelData/sphere.tkm";
+    transModelInitData.m_fxFilePath = "Assets/shader/model.fx";
+    transModelInitData.m_expandConstantBuffer = &light;
+    transModelInitData.m_expandConstantBufferSize = sizeof(light);
+    transModelInitData.m_psEntryPointFunc = "PSMainTrans";
+
+    Model sphereModel;
+    sphereModel.Init(transModelInitData);
 
     Vector3 planePos = { 0.0f, 160.0f, 20.0f };
 
@@ -160,7 +169,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         // G-Bufferの内容を元にしてディファードライティング
         defferdLightinSpr.Draw(renderContext);
 
-        // step-2 深度ステンシルビューをG-Bufferを作成したときのものに変更する
+        // step-2 半透明オブジェクトを描画
+        // 深度ステンシルビューをG-Bufferを作成したときのものに変更する
+        renderContext.SetRenderTarget(
+            g_graphicsEngine->GetCurrentFrameBufferRTV(),
+            rts[0]->GetDSVCpuDescriptorHandle()
+        );
+
+        sphereModelDraw(renderContext);
 
         /////////////////////////////////////////
         // 絵を描くコードを書くのはここまで！！！
