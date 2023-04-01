@@ -121,9 +121,15 @@ PSInput VSMain(VSInput In)
  */
 float4 PSMain(PSInput In) : SV_Target0
 {
+    float2 viewportPos = In.pos.xy;
+
     // step-16 このピクセルが含まれているタイルの番号を計算する
+    uint numCellX = (screenParam.z + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint tileIndex = floor(viewportPos.x / TILE_WIDTH) + floor(viewportPos.y / TILE_WIDTH) * numCellX;
 
     // step-17 含まれるタイルの影響の開始位置と終了位置を計算する
+    uint lightStart = tileIndex * numPointLight;
+    uint lightEnd = lightStart + numPointLight;
 
     // G-Bufferの内容を使ってライティング
     float4 albedo = albedoTexture.Sample(Sampler, In.uv);
@@ -152,11 +158,29 @@ float4 PSMain(PSInput In) : SV_Target0
             directionLight[ligNo].direction,
             directionLight[ligNo].color,
             normal,
-            toEye);
+            toEye
+        );
     }
 
     // step-18 ポイントライトを計算
+    for (uint lightListIndex = lightStart; lightListIndex < lightEnd; lightListIndex++)
+    {
+        uint ligNo = pointLightListInTile[lightListIndex];
+        if (ligNo == 0xffffffff)
+        {
+            // 番兵に達したので､このタイルに含まれるポイントライトはもう無い
+            break;
+        }
 
+        // ここから先はいつものライティング
+        float3 ligDir = normalize(worldPos - pointLight[ligNo].position);
+        float distance = length(worldPos - pointLight[ligNo].position);
+        float affect = 1.0f - min(1.0f, distance / pointLight[ligNo].range);
+        // 拡散反射
+        lig += CalcLambertReflection(ligDir, pointLight[ligNo].color, normal) * affect;
+        // 鏡面反射
+        lig += CalcSpecularReflection(ligDir, pointLight[ligNo].color, normal, toEye) * affect;
+    }
     float4 finalColor = albedo;
     finalColor.xyz *= lig;
     return finalColor;

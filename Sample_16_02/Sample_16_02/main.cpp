@@ -54,6 +54,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     std::mt19937 random(seed_gen());
 
     g_camera3D->SetPosition({ 0.0f, 200.0, 400.0f });
+    g_camera3D->Update();
 
     // ルートシグネチャを作成
     RootSignature rootSignature;
@@ -131,13 +132,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         DXGI_FORMAT_UNKNOWN);
 
     // step-1 射影空間でのZ値を出力するためのG-Bufferを作成
+    RenderTarget depthRT;
+    depthRT.Create(
+        FRAME_BUFFER_W,
+        FRAME_BUFFER_H,
+        1,
+        1,
+        DXGI_FORMAT_R32_FLOAT,
+        DXGI_FORMAT_UNKNOWN
+    );
 
     RenderTarget* gbuffers[] = {
         &albedoRT,      // 0番目のレンダリングターゲット
         &normalRT,      // 1番目のレンダリングターゲット
-
         // step-2 RenderGBufferのパスのレンダリングターゲットにdepthRTを追加
-
+        &depthRT
     };
 
     // ポストエフェクト的にディファードライティングを行うためのスプライトを初期化
@@ -150,8 +159,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     // ディファードライティングで使用するテクスチャを設定
     spriteInitData.m_textures[0] = &albedoRT.GetRenderTargetTexture();
     spriteInitData.m_textures[1] = &normalRT.GetRenderTargetTexture();
-
     // step-3 ディファードライティングで使用するテクスチャを追加
+    spriteInitData.m_textures[2] = &depthRT.GetRenderTargetTexture();
 
     spriteInitData.m_fxFilePath = "Assets/shader/defferedLighting.fx";
     spriteInitData.m_expandConstantBuffer = &light;

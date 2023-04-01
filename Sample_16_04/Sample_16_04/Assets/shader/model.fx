@@ -142,6 +142,45 @@ float3 CalcDirectionLight(SPSIn psIn)
 float3 CalcPointLight(SPSIn psIn)
 {
     // step-5 作成したライトのリストを使って、ポイントライトを計算する
+    const int TILE_WIDTH = 16;
+    const int TILE_HEIGHT = 16;
+
+    float2 viewportPos = psIn.pos.xy;
+
+    uint numCellX = (screenParam.z + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint tileIndex = floor(viewportPos.x / TILE_WIDTH) + floor(viewportPos.y / TILE_WIDTH) * numCellX;
+
+    uint lightStart = tileIndex * numPointLight;
+    uint lightEnd = lightStart + numPointLight;
+
+    float3 lig = 0.0f;
+    float3 toEye = normalize(eyePos - psIn.worldPos.xyz);
+    for (uint lightListIndex = lightStart;
+        lightListIndex < lightEnd;
+        lightListIndex++)
+    {
+        uint ligNo = pointLightListInTile[lightListIndex];
+        if (ligNo == 0xffffffff)
+        {
+            break;
+        }
+
+        float3 ligDir = normalize(psIn.worldPos - pointLight[ligNo].position);
+        float distance = length(psIn.worldPos - pointLight[ligNo].position);
+        float affect = 1.0f - min(1.0f, distance / pointLight[ligNo].range);
+
+        lig += CalcLambertReflection(
+            ligDir,
+            pointLight[ligNo].color,
+            psIn.normal) * affect;
+        lig += CalcSpecularReflection(
+            ligDir,
+            pointLight[ligNo].color,
+            psIn.normal,
+            toEye) * affect;
+    }
+
+    return lig;
 }
 
 /// <summary>
