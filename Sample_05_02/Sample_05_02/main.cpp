@@ -19,6 +19,12 @@ struct Light
     float ptRange;          // 影響範囲
 
     // step-1 ライト構造体にスポットライト用のメンバ変数を追加
+    Vector3 spPosition;
+    float pad3;
+    Vector3 spColor;
+    float spRange;
+    Vector3 spDirection;
+    float spAnge;
 
     Vector3 eyePos;         // 視点の位置
     float pad4;
@@ -58,6 +64,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     InitAmbientLight(light);
 
     // step-2 スポットライトのデータを初期化する
+    light.spPosition.x = 0.0f;
+    light.spPosition.y = 50.0f;
+    light.spPosition.z = 0.0f;
+
+    light.spColor.x = 10.0f;
+    light.spColor.y = 10.0f;
+    light.spColor.z = 10.0f;
+
+    light.spDirection.x = 1.0f;
+    light.spDirection.y = -1.0f;
+    light.spDirection.z = 1.0f;
+    light.spDirection.Normalize();
+
+    light.spRange = 300.0f;
+    light.spAngle = Math::DegToRad(25.0f);
 
     // モデルを初期化する
     // モデルを初期化するための情報を構築する
@@ -79,8 +100,35 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         //////////////////////////////////////
 
         // step-3 コントローラー左スティックでスポットライトを移動させる
+        light.spPosition.x -= g_pad[0]->GetLStickXF();
+        if (g_pad[0]->lsPress(enButtonB))
+        {
+            light.spPosition.y += g_pad[0]->GetLStickYF();
+        }
+        else
+        {
+            light.spPosition.z -= g_pad[0]->GetLStickYF();
+        }
 
         // step-4 コントローラー右スティックでスポットライトを回転させる
+        // Y軸を回す
+        Quaternion qRotY;
+        qRotY.SetRotationY(g_pad[0]->GetRStickXF() * 0.01f);
+        qRot.Apply(light.spDirection);
+
+        // X軸を回す
+        Vector3 rotAxis;
+        rotAxis.Cross(g_vec3AxisY, light.spDirection);
+        Quaternion qRotX;
+        qRotX.SetRotation(rotAxis, g_pad[0]->GetRStickYF() * 0.01f);
+        qRotX.Apply(light.spDirection);
+
+        // スポットライトモデルの回転クォータニオンを求める
+        Quaternion qRot;
+        qRot.SetRotation({0.0f, 0.0f, -1.0f}, light.spDirection);
+
+        // スポットライトモデルのワールド行列を更新
+        lightMode.UpdateWorldMatrix(light.spDirection, qRot, g_vec3One);
 		
         // 背景モデルをドロー
         bgModel.Draw(renderContext);
