@@ -71,16 +71,40 @@ void chs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr
     payload.color = g_albedoTexture.SampleLevel(g_samplerState,uv,0.0f);
 
     // step-1 カメラレイがポリゴンと衝突した位置を計算する
+    float3 rayDirW = WorldRayDirection();
+    float3 rayOriginW = WorldRayOrigin();
+    float hitT = RayTCurrent();
+    float3 hitPos = rayOriginW + rayDirW * hitT;
 
     // step-2 反射ベクトルを計算する
+    float3 normal = GetNormal(attribs);
+    float3 refDir = reflect(rayDirW, normal);
 
     // step-3 レイを作る
+    RayDesc ray;
+    ray.Origin = hitPos;
+    ray.Direction = refDir;
+    ray.TMin = 0.01f;
+    ray.TMax = 10000;
 
     // step-4 レイを飛ばす
-    if(payload.reflection == 0)
+    if(payload.reflection == 0) // 再帰的に呼ばれるため､何度も呼ばれれないようこのif文でガード
     {
+        RayPayload reflectionPayload;
+        reflectionPayload.color = 0.0f;
+        reflectionPayload.reflection = 1; // 何度も呼ばれないようフラグを立てる
+        TraceRay(
+            g_raytracingWorld,
+            0,
+            0xFF,
+            0, // ヒットグループ0なので､chs関数自体が再帰的に呼ばれる
+            1,
+            ray,
+            reflectionPayload
+        );
 
         // step-5 反射カラーの合成
+        payload.color = payload.color * 0.7f + reflectionPayload.color * 0.3f;
     }
 }
 

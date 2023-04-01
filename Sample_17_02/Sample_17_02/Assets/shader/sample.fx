@@ -31,13 +31,31 @@ SamplerState  g_samplerState : register(s0);                // サンプラー�
 void chs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
     // step-1 衝突したポリゴンの番号からポリゴンを構成する頂点番号を取得する
+    uint polygonNo = PrimitiveIndex();
+    uint v0_id = g_indexBuffers[polygonNo * 3];
+    uint v1_id = g_indexBuffers[polygonNo * 3 + 1];
+    uint v2_id = g_indexBuffers[polygonNo * 3 + 2];
 
     // step-2 頂点番号から各頂点のUV座標を取得する
+    float2 uv0 = g_vertexBuffers[v0_id].uv;
+    float2 uv1 = g_vertexBuffers[v1_id].uv;
+    float2 uv2 = g_vertexBuffers[v2_id].uv;
 
     // step-3 各頂点のUV座標と重心座標を使って、衝突点のUV座標を求める
+    float3 barycentrics;
+    barycentrics.x = 1.0 - attribs.barycentrics.x - attribs.barycentrics.y;
+    barycentrics.y = attribs.barycentrics.x;
+    barycentrics.z = attribs.barycentrics.y;
+    float2 uv = barycentrics.x * uv0
+              + barycentrics.y * uv1
+              + barycentrics.z * uv2;
 
     // step-4 求めたUV座標を使ってテクスチャカラーをサンプリングする
-
+    payload.color = g_albedoTexture.SampleLevel(
+        g_samplerState,
+        uv,
+        0.0f
+    );
 }
 
 /////////////////////////////////////////////////////////////////

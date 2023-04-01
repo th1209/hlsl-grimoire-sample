@@ -11,6 +11,13 @@ struct RayPayload
 void chs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
     // step-4 レイと衝突した点の色を計算する
+    // attribsには､衝突した三角形ポリゴンの値が入っている. 特に､attribs.barycentricsは､三角形ポリゴンのどこに衝突したかが入っている(大体重心座標).
+    // ここでは､衝突した重心座標を頂点カラーとして出力している.
+    float3 barycentrics;
+    barycentrics.x = 1.0f - attribs.barycenrics.x - attribs.barycentrics.y;
+    barycentrics.y = attribs.barycentrics.x;
+    barycentrics.z = attribs.barycentrics.y;
+    payload.color = barycentrics;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -20,6 +27,7 @@ void chs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr
 void miss(inout RayPayload payload)
 {
     // step-5 レイがポリゴンが衝突しなかった時のカラーを計算する
+    payload.color = float3(1.0f, 0.0f, 0.0f);
 }
 
 // カメラ構造体
