@@ -9,6 +9,7 @@ cbuffer DirectionLight : register(b1)
     float3 ligColor;        // ライトのカラー
     float3 ligDirection;    // ライトの方向
     // step-9 定数バッファーに視点の位置を追加
+    float3 eyePos;
 };
 
 struct VSInput
@@ -27,6 +28,7 @@ Texture2D<float4> albedoTexture : register(t0); // アルベド
 Texture2D<float4> normalTexture : register(t1); // 法線
 
 // step-10 ワールド座標テクスチャにアクセスするための変数を追加
+Texture2D<float4> worldPosTexture : register(t2);
 
 sampler Sampler : register(s0);
 
@@ -52,6 +54,12 @@ float4 PSMain(PSInput In) : SV_Target0
     lig = ligColor * t;
 
     // step-11 スペキュラ反射を計算
+    float3 worldPos = worldPosTexture.Sample(Sampler, In.uv).xyz;
+    float3 toEye = normalize(eyePos - worldPos);
+    float3 r = reflect(ligDirection, normal);
+    t = max(0.0f, dot(toEye, r));
+    t = pow(t, 5.0f);
+    lig += ligColor * t;
 
     float4 finalColor = albedo;
     finalColor.xyz *= lig;

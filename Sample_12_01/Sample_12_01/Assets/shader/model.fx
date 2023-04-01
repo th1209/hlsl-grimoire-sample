@@ -61,4 +61,9 @@ SPSIn VSMain(SVSIn vsIn, uniform bool hasSkin)
 SPSOut PSMain(SPSIn psIn)
 {
     // step-6 G-Bufferに出力
+    SPSOut psOut;
+    psOut.albedo = g_texture.Sample(g_sampler, psIn.uv);
+    // ※法線の値は[-1,1] -> [0.1]に変換
+    psOut.normal = (psIn.normal / 2.0f) + 0.5f;
+    return psOut;
 }
